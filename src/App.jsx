@@ -89,9 +89,13 @@ export default function App() {
 
         const { data: payments } = await supabase.from('pagos').select('metodo_pago, importe_pagado_usd');
         const paymentStats = payments?.reduce((acc, curr) => {
-          const existing = acc.find(item => item.name === curr.metodo_pago);
-          if (existing) existing.value += curr.importe_pagado_usd;
-          else acc.push({ name: curr.metodo_pago.toUpperCase(), value: curr.importe_pagado_usd });
+          const name = curr.metodo_pago.toUpperCase();
+          const existing = acc.find(item => item.name === name);
+          if (existing) {
+            existing.value += parseFloat(curr.importe_pagado_usd);
+          } else {
+            acc.push({ name: name, value: parseFloat(curr.importe_pagado_usd) });
+          }
           return acc;
         }, []);
 
