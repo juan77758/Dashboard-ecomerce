@@ -12,7 +12,8 @@ import {
   Activity,
   Globe,
   CreditCard,
-  History
+  History,
+  LayoutDashboard
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -27,27 +28,28 @@ const SUPABASE_ANON_KEY = "sb_publishable_SPyTtOQnBQ654KoiM4W2yg_EIkp5DE6";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- Componentes UX ---
-const MetricCard = ({ title, value, unit = "", icon: Icon, trend = 0, color = "primary" }) => (
+const MetricCard = ({ title, value, unit = "", icon: Icon, trend = 0, color = "emerald" }) => (
   <motion.div 
     whileHover={{ y: -5 }}
-    className="glass p-6 glass-hover relative overflow-hidden group"
+    className="glass p-6 glass-hover relative overflow-hidden group bg-white border border-slate-200"
   >
-    <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-${color}/10 rounded-full blur-3xl group-hover:bg-${color}/20 transition-all duration-500`} />
+    {/* Soft subtle green glow bg */}
+    <div className={`absolute top-0 right-0 w-32 h-32 -mr-12 -mt-12 bg-emerald-50 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
     
     <div className="flex justify-between items-start mb-4">
-      <div className={`p-2 rounded-xl bg-${color}/10 text-${color}`}>
+      <div className={`p-3 rounded-2xl bg-emerald-50 text-emerald-700 shadow-sm`}>
         <Icon size={24} />
       </div>
       {trend !== 0 && (
-        <div className={`flex items-center text-xs font-medium ${trend > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-          {trend > 0 ? <ArrowUpRight size={14} className="mr-1" /> : <ArrowDownRight size={14} className="mr-1" />}
+        <div className={`flex items-center text-sm font-bold ${trend > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+          {trend > 0 ? <ArrowUpRight size={16} className="mr-1" /> : <ArrowDownRight size={16} className="mr-1" />}
           {Math.abs(trend)}%
         </div>
       )}
     </div>
     
-    <p className="text-slate-400 text-sm font-medium mb-1 tracking-wide uppercase">{title}</p>
-    <h3 className="text-3xl font-bold tracking-tight">
+    <p className="text-slate-500 text-sm font-semibold mb-1 tracking-wide uppercase">{title}</p>
+    <h3 className="text-4xl font-black tracking-tight text-slate-900">
       {unit}{typeof value === 'number' ? value.toLocaleString() : value}
     </h3>
   </motion.div>
@@ -55,10 +57,10 @@ const MetricCard = ({ title, value, unit = "", icon: Icon, trend = 0, color = "p
 
 const SectionTitle = ({ children, icon: Icon }) => (
   <div className="flex items-center gap-3 mb-6">
-    <div className="p-2 rounded-lg bg-white/5 border border-white/10">
-      <Icon size={20} className="text-primary" />
+    <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200">
+      <Icon size={20} />
     </div>
-    <h2 className="text-xl font-bold tracking-tight text-white/90">{children}</h2>
+    <h2 className="text-xl font-extrabold tracking-tight text-slate-800">{children}</h2>
   </div>
 );
 
@@ -76,22 +78,16 @@ export default function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 1. Métricas Globales
         const { data: orders } = await supabase.from('pedidos').select('importe_total_usd, estado_pedido');
         const { count: clientsCount } = await supabase.from('clientes').select('*', { count: 'exact', head: true });
-        const { count: productsCount } = await supabase.from('productos').select('*', { count: 'exact', head: true });
         
         const totalRev = orders?.filter(o => o.estado_pedido === 'completado').reduce((acc, curr) => acc + curr.importe_total_usd, 0) || 0;
         const avgTicket = totalRev / (orders?.filter(o => o.estado_pedido === 'completado').length || 1);
         const refundRate = (orders?.filter(o => o.estado_pedido === 'reembolsado').length / (orders?.length || 1)) * 100;
 
-        // 2. Ventas Diarias (desde vista)
         const { data: dailySales } = await supabase.from('ventas_diarias').select('*').limit(30);
-        
-        // 3. Ventas por Categoría (desde vista)
         const { data: catSales } = await supabase.from('ventas_por_categoria').select('*');
 
-        // 4. Métodos de Pago
         const { data: payments } = await supabase.from('pagos').select('metodo_pago, importe_pagado_usd');
         const paymentStats = payments?.reduce((acc, curr) => {
           const existing = acc.find(item => item.name === curr.metodo_pago);
@@ -100,14 +96,13 @@ export default function App() {
           return acc;
         }, []);
 
-        // 5. Pedidos Recientes
         const { data: recent } = await supabase.from('pedidos')
           .select('id, id_cliente, fecha_pedido, estado_pedido, importe_total_usd, clientes(nombre)')
           .order('fecha_pedido', { ascending: false })
           .limit(8);
 
         setData({
-          metrics: { totalRev, clientsCount, productsCount, avgTicket, refundRate, ordersTotal: orders?.length },
+          metrics: { totalRev, clientsCount, avgTicket, refundRate },
           dailySales: dailySales?.reverse() || [],
           categories: catSales || [],
           payments: paymentStats || [],
@@ -123,202 +118,189 @@ export default function App() {
     fetchData();
   }, []);
 
-  const COLORS = ['#0ea5e9', '#ec4899', '#f59e0b', '#10b981', '#8b5cf6'];
+  const GREEN_PALETTE = ['#059669', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0'];
 
   if (loading) return (
-    <div className="h-screen w-full flex flex-col items-center justify-center bg-bg-dark">
-      <motion.div 
-        animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-        className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full mb-4"
+    <div className="h-screen w-full flex flex-col items-center justify-center bg-bg-cream">
+       <motion.div 
+        animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
+        transition={{ repeat: Infinity, duration: 2.5 }}
+        className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full mb-6"
       />
-      <p className="text-slate-500 animate-pulse tracking-widest uppercase text-xs">Cargando Inteligencia de Negocio...</p>
+      <h2 className="text-emerald-900 font-black tracking-widest text-sm uppercase">Analizando Ecosistema de Datos...</h2>
     </div>
   );
 
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen p-4 md:p-10 max-w-7xl mx-auto space-y-10 selection:bg-emerald-200">
       {/* Header */}
       <motion.header 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-200 pb-10"
       >
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-             <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-             <span className="text-xs font-bold text-emerald-400 uppercase tracking-tighter">Live Insights</span>
+        <div className="flex items-center gap-5">
+          <div className="p-4 bg-emerald-600 text-white rounded-3xl shadow-xl shadow-emerald-200">
+            <LayoutDashboard size={32} />
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-white/90">
-            Analytics <span className="text-primary italic">PJ-Dashboard</span>
-          </h1>
-          <p className="text-slate-400 mt-1 max-w-lg">Visi\u00f3n global de rendimiento del ecommerce en tiempo real.</p>
+          <div>
+            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
+              Dashboard <span className="text-emerald-600">Analytics</span>
+            </h1>
+            <p className="text-slate-500 font-medium mt-1">
+              Visualización del rendimiento ecommerce &bull; Proyecto <span className="text-emerald-700 font-bold">PJ-08</span>
+            </p>
+          </div>
         </div>
         
-        <div className="flex items-center gap-3">
-          <button className="glass px-4 py-2 text-sm font-medium glass-hover text-slate-300 flex items-center gap-2">
-            <History size={16} /> Úiltimos 90 días
+        <div className="flex items-center gap-4 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
+          <button className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 rounded-xl transition-all">
+            <History size={18} /> Últimos 90 Días
           </button>
-          <button className="bg-primary hover:bg-primary/80 transition-colors text-white px-5 py-2 text-sm font-bold rounded-2xl flex items-center gap-2 shadow-lg shadow-primary/20">
-            <TrendingUp size={16} /> Exportar Reporte
+          <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 text-sm font-black rounded-xl shadow-lg shadow-emerald-200/50 flex items-center gap-2 transition-all active:scale-95">
+            <TrendingUp size={18} /> Exportar Reporte
           </button>
         </div>
       </motion.header>
 
-      {/* Métricas */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-      >
-        <MetricCard title="Facturación Total" value={data.metrics.totalRev} unit="$" icon={DollarSign} trend={8.4} color="primary" />
-        <MetricCard title="Ticket Promedio" value={data.metrics.avgTicket} unit="$" icon={ShoppingCart} trend={2.1} color="secondary" />
-        <MetricCard title="Total Clientes" value={data.metrics.clientsCount} icon={Users} trend={12.5} color="accent" />
-        <MetricCard title="Tasa Devolución" value={data.metrics.refundRate.toFixed(1)} unit="" icon={Activity} trend={-1.4} color="emerald" />
-      </motion.div>
+      {/* Métricas Principales */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricCard title="Ingresos Totales" value={data.metrics.totalRev} unit="$" icon={DollarSign} trend={8.4} color="emerald" />
+        <MetricCard title="Ticket Promedio" value={data.metrics.avgTicket} unit="$" icon={ShoppingCart} trend={2.1} color="emerald" />
+        <MetricCard title="Nuevos Clientes" value={data.metrics.clientsCount} icon={Users} trend={12.5} color="emerald" />
+        <MetricCard title="Tasa Rembolso" value={data.metrics.refundRate.toFixed(1)} unit="" icon={Activity} trend={-1.4} color="emerald" />
+      </div>
 
-      {/* Gráficos Principales */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Evolución Ventas */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Ventas Diarias */}
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-          className="lg:col-span-2 glass p-6"
+          className="lg:col-span-8 p-8 glass bg-white"
         >
-          <SectionTitle icon={TrendingUp}>Evolución de Ventas Diarias</SectionTitle>
-          <div className="h-[350px] w-full">
+          <SectionTitle icon={TrendingUp}>Crecimiento de Ventas Diarias</SectionTitle>
+          <div className="h-[400px] w-full mt-4">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data.dailySales}>
                 <defs>
-                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                  <linearGradient id="colorGreen" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.15}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="fecha" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `$${val/1000}k`} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
+                <XAxis dataKey="fecha" axisLine={false} tickLine={false} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `$${val/1000}k`} dx={-10} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }} 
-                  itemStyle={{ color: '#0ea5e9' }}
+                   cursor={{ stroke: '#059669', strokeWidth: 2 }}
+                   contentStyle={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                 />
-                <Area type="monotone" dataKey="facturacion_total" stroke="#0ea5e9" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
+                <Area type="monotone" dataKey="facturacion_total" stroke="#059669" strokeWidth={4} fillOpacity={1} fill="url(#colorGreen)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </motion.div>
 
-        {/* Distribución Pagos */}
+        {/* Métodos de Pago */}
         <motion.div 
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-          className="glass p-6"
+          className="lg:col-span-4 p-8 glass bg-white flex flex-col"
         >
-          <SectionTitle icon={CreditCard}>Métodos de Pago ($)</SectionTitle>
-          <div className="h-[350px] w-full">
+          <SectionTitle icon={CreditCard}>Métodos de Pago</SectionTitle>
+          <div className="h-[400px] w-full flex-grow">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={data.payments}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
+                  innerRadius={80}
+                  outerRadius={100}
+                  paddingAngle={8}
                   dataKey="value"
                 >
                   {data.payments.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={GREEN_PALETTE[index % GREEN_PALETTE.length]} strokeWidth={0} />
                   ))}
                 </Pie>
                 <Tooltip 
-                   contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                   contentStyle={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0' }}
                 />
-                <Legend iconType="circle" />
+                <Legend layout="horizontal" verticalAlign="bottom" align="center" iconType="circle" />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </motion.div>
       </div>
 
-      {/* Gráficos Secundarios y Tabla */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Ventas por Categoría */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Top Categorías */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="lg:col-span-1 glass p-6"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="lg:col-span-4 p-8 glass bg-white"
         >
-          <SectionTitle icon={Package}>Top Categorías</SectionTitle>
-          <div className="h-[400px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.categories.slice(0, 8)} layout="vertical">
-                <XAxis type="number" hide />
-                <YAxis dataKey="categoria" type="category" axisLine={false} tickLine={false} width={100} />
-                <Tooltip 
-                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                />
-                <Bar dataKey="facturacion_total" radius={[0, 4, 4, 0]}>
-                  {data.categories.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill="#0ea5e9" fillOpacity={1 - (index * 0.1)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+          <SectionTitle icon={Package}>Top Categorías ($)</SectionTitle>
+          <div className="space-y-6 mt-6">
+            {data.categories.slice(0, 6).map((cat, idx) => (
+              <div key={idx} className="group">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-bold text-slate-700">{cat.categoria}</span>
+                  <span className="text-sm font-extrabold text-emerald-700">${cat.facturacion_total.toLocaleString()}</span>
+                </div>
+                <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(cat.facturacion_total / data.categories[0].facturacion_total) * 100}%` }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                    className="h-full bg-emerald-600 group-hover:bg-emerald-500 transition-colors"
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </motion.div>
 
-        {/* Pedidos Recientes */}
+        {/* Tabla Actividad */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="lg:col-span-2 glass p-6 overflow-hidden"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="lg:col-span-8 p-8 glass bg-white"
         >
-          <SectionTitle icon={History}>Últimos Pedidos</SectionTitle>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
+          <SectionTitle icon={History}>Última Actividad Económica</SectionTitle>
+          <div className="overflow-x-auto mt-4">
+            <table className="w-full">
               <thead>
-                <tr className="text-slate-500 text-xs font-bold border-b border-white/5 uppercase tracking-wider">
+                <tr className="text-slate-400 text-xs font-black uppercase tracking-widest text-left border-b border-slate-100">
                   <th className="pb-4">Cliente</th>
                   <th className="pb-4">Fecha</th>
                   <th className="pb-4">Estado</th>
-                  <th className="pb-4 text-right">Importe</th>
+                  <th className="pb-4 text-right">Valor</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-slate-50">
                 {data.recentOrders.map((order, idx) => (
-                  <motion.tr 
-                    key={order.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.7 + (idx * 0.05) }}
-                    className="group hover:bg-white/5 transition-colors cursor-default"
-                  >
+                  <tr key={order.id} className="hover:bg-emerald-50/30 transition-colors">
                     <td className="py-4">
-                      <div className="font-semibold text-slate-200">{order.clientes?.nombre}</div>
+                      <div className="font-bold text-slate-800">{order.clientes?.nombre}</div>
                     </td>
-                    <td className="py-4 text-slate-400 text-sm">
-                      {new Date(order.fecha_pedido).toLocaleDateString()}
+                    <td className="py-4 text-slate-500 text-sm font-medium">
+                      {new Date(order.fecha_pedido).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
                     </td>
                     <td className="py-4">
-                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
-                        order.estado_pedido === 'completado' ? 'bg-emerald-500/10 text-emerald-400' :
-                        order.estado_pedido === 'cancelado' ? 'bg-rose-500/10 text-rose-400' :
-                        'bg-amber-500/10 text-amber-400'
+                      <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tight ${
+                        order.estado_pedido === 'completado' ? 'bg-emerald-100 text-emerald-700' :
+                        order.estado_pedido === 'cancelado' ? 'bg-rose-100 text-rose-700' :
+                        'bg-amber-100 text-amber-700'
                       }`}>
                         {order.estado_pedido}
                       </span>
                     </td>
-                    <td className="py-4 text-right font-bold text-slate-200">
-                      ${order.importe_total_usd.toLocaleString()}
+                    <td className="py-4 text-right">
+                      <span className="font-black text-slate-900">${order.importe_total_usd.toLocaleString()}</span>
                     </td>
-                  </motion.tr>
+                  </tr>
                 ))}
               </tbody>
             </table>
@@ -326,8 +308,8 @@ export default function App() {
         </motion.div>
       </div>
 
-      <footer className="pt-8 text-center text-slate-500 text-xs tracking-widest uppercase pb-4">
-        &copy; 2026 PJ-Analytics Platform &bull; Powered by Supabase & Antigravity
+      <footer className="pt-10 border-t border-slate-200 text-center">
+        <p className="text-slate-400 text-xs font-black uppercase tracking-[0.3em]">&copy; 2026 PJ-Eco Analytics &bull; Designed by Antigravity</p>
       </footer>
     </div>
   );
