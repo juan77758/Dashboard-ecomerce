@@ -4,27 +4,29 @@
 
 @layer base {
   body {
-    @apply bg-bg-cream text-slate-800 selection:bg-primary selection:text-white;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply bg-slate-50 text-slate-900 selection:bg-indigo-100 selection:text-indigo-900;
+    font-family: 'Geist', 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
   }
 }
 
 @layer utilities {
-  .glass {
-    @apply bg-white border border-slate-200 shadow-sm rounded-2xl;
+  .startup-card {
+    @apply bg-white border border-slate-100 shadow-[0_1px_2px_rgba(0,0,0,0.06)] rounded-3xl p-8;
   }
   
-  .glass-hover {
-    @apply hover:shadow-lg hover:border-primary/20 transition-all duration-300;
+  .startup-hover {
+    @apply hover:shadow-[0_10px_40px_-5px_rgba(0,0,0,0.04)] hover:border-slate-200 transition-all duration-500 ease-in-out;
   }
 
-  .text-glow {
-    text-shadow: 0 0 12px rgba(5, 150, 105, 0.2);
+  .text-title {
+    @apply font-black tracking-tight text-slate-900 leading-tight;
   }
 
-  /* Custom scrollbar for light theme */
+  /* Thin minimalist scrollbar */
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
@@ -33,23 +35,21 @@
     background: #e2e8f0;
     border-radius: 10px;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #cbd5e1;
-  }
 }
 
-/* Fix Recharts text colors for light theme */
+/* Minimalist chart touches */
 .recharts-cartesian-grid-horizontal line,
 .recharts-cartesian-grid-vertical line {
-  stroke: rgba(0, 0, 0, 0.05);
+  stroke: #f1f5f9;
 }
 
 .recharts-text {
-  fill: #64748b !important;
-  font-size: 12px;
+  fill: #94a3b8 !important;
+  font-size: 11px;
   font-weight: 500;
 }
 
-.recharts-legend-item-text {
-  color: #1e293b !important;
+.recharts-tooltip-cursor {
+  stroke: #e2e8f0;
+  stroke-width: 1px;
 }
