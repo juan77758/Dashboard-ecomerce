@@ -1,0 +1,109 @@
+### PROMPT CREAR BASE DE DATOS SUPABASE ###
+Quiero preparar una base de datos en Supabase para construir un dashboard que muestre la evolución de ventas de un ecommerce.
+
+Usa la integración MCP de Supabase. El objetivo es dejar una base de datos PostgreSQL completamente preparada para análisis y visualización de datos.
+
+PASO INICIAL:
+- Si el MCP permite crear un proyecto de Supabase desde cero, crea uno nuevo con un nombre descriptivo.
+- Si no es posible crear proyectos, indícame qué identificador del proyecto necesitas y asume que ya tienes acceso para ejecutar SQL.
+
+REQUISITOS DEL ESQUEMA DE BASE DE DATOS:
+
+1) Crear las siguientes tablas relacionadas entre sí:
+
+- clientes
+- categorias
+- productos
+- pedidos
+- lineas_pedido
+- pagos
+- devoluciones
+
+2) Definición de columnas (todas en español):
+
+Tabla: clientes  
+- id (uuid, clave primaria)  
+- correo_electronico (único, no nulo)  
+- nombre  
+- pais  
+- fecha_creacion  
+
+Tabla: categorias  
+- id (uuid, clave primaria)  
+- nombre (único, no nulo)  
+
+Tabla: productos  
+- id (uuid, clave primaria)  
+- sku (único, no nulo)  
+- nombre  
+- id_categoria (clave foránea a categorias)  
+- precio_usd  
+- activo  
+- fecha_creacion  
+
+Tabla: pedidos  
+- id (uuid, clave primaria)  
+- id_cliente (clave foránea a clientes)  
+- fecha_pedido  
+- estado_pedido (completado, cancelado, reembolsado)  
+- moneda  
+- importe_total_usd  
+- pais_envio  
+
+Tabla: lineas_pedido  
+- id (uuid, clave primaria)  
+- id_pedido (clave foránea a pedidos)  
+- id_producto (clave foránea a productos)  
+- cantidad  
+- precio_unitario_usd  
+- importe_linea_usd  
+
+Tabla: pagos  
+- id (uuid, clave primaria)  
+- id_pedido (clave foránea a pedidos)  
+- metodo_pago (tarjeta, paypal, stripe)  
+- importe_pagado_usd  
+- fecha_pago  
+- estado_pago (pagado, fallido, reembolsado)  
+
+Tabla: devoluciones  
+- id (uuid, clave primaria)  
+- id_linea_pedido (clave foránea a lineas_pedido)  
+- fecha_devolucion  
+- motivo  
+- importe_reembolsado_usd  
+
+3) Integridad y rendimiento:
+
+- Usar UUIDs generados automáticamente.
+- Definir correctamente todas las claves foráneas con reglas de borrado coherentes.
+- Crear índices para análisis y dashboards sobre:
+  - fecha_pedido
+  - estado_pedido
+  - id_cliente
+  - id_categoria
+  - id_producto
+  - fecha_pago
+- Añadir restricciones:
+  - correos electrónicos y sku únicos
+  - importes y cantidades no negativas
+  - estados controlados mediante CHECK
+- Crear al menos dos vistas para análisis:
+  - ventas_diarias (fecha, número de pedidos, facturación total)
+  - ventas_por_categoria (categoria, pedidos, facturación)
+
+4) Datos de ejemplo:
+
+- Insertar datos ficticios y realistas correspondientes a los últimos 90 días:
+  - aproximadamente 500 clientes
+  - 15 categorías
+  - 200 productos
+  - 8.000 pedidos
+  - líneas de pedido coherentes
+  - entre un 2 % y un 5 % de pedidos cancelados o devueltos
+  - distintos métodos de pago
+- Asegurar coherencia entre los importes de pedidos y la suma de sus líneas (o documentar claramente si se calcula mediante vistas).
+
+
+### PROMPT CREAR DASHBOARD ###
+vale gracias, ahora necesito que me diseñes un dashboard con los gráficos que consideres mas relevantes para analizar los datos de supabase. El dashboard lo puedes generar con el lenguaje que consideres pero que sea interactivo y me permita obtener una vision global de todo el rendimiento de mi negocio
