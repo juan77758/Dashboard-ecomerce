@@ -1,11 +1,13 @@
-# Biblioteca CAD organizada
+# Biblioteca CAD — versión 2
 
-Descarga [BIBLIOTECA_CAD.zip](BIBLIOTECA_CAD.zip?raw=true) y extrae su contenido.
+[**Descargar BIBLIOTECA_CAD_v2.zip**](BIBLIOTECA_CAD_v2.zip?raw=true)
 
-Contiene el DXF maestro validado con **1.609 entradas clasificadas en siete categorías**, índice CSV, muestra visual PDF, informe de procesamiento y los 1.612 DWG originales.
+Extrae el ZIP en una carpeta nueva y abre `BIBLIOTECA_CAD_V2/BIBLIOTECA_BLOQUES_MAESTRA.dxf` en AutoCAD. Después usa **Guardar como → DWG**.
 
-**No incluye un DWG maestro validado.** La conversión realizada en el entorno perdió geometría y se descartó. Para obtener el DWG, abre `BIBLIOTECA_BLOQUES_MAESTRA.dxf` en AutoCAD y usa **Guardar como → DWG**. También se incluye `guardar_maestro_como_dwg.lsp` para automatizar ese paso en AutoCAD completo para Windows; ese script no se ha ejecutado en AutoCAD en este entorno.
+Esta revisión corrige el error de apertura «Error en la tabla LTYPE: número insuficiente de elementos de tipo de línea» detectado en AutoCAD: se restauraron 15 patrones HIDDEN/DASHED incompletos usando definiciones válidas existentes con idéntica longitud y cantidad de elementos. También se corrigieron 12 valores de color fuera de rango en estilos de cotas. Los tags de BLOCKS, ENTITIES y OBJECTS permanecen idénticos.
 
-Tres fuentes no pudieron incorporarse al maestro: B0795 Ómnibus, B0924 Tina 16Alzado y B1093 Det Est. Sus originales permanecen en `ORIGINALES` y están identificados en el reporte.
+La apertura de esta versión en AutoCAD está pendiente de comprobación por el usuario; aquí se verificaron las definiciones, los rangos de color y la lectura/auditoría de ezdxf.
 
-Consulta `LEEME_PRIMERO.txt` dentro del paquete para las instrucciones.
+Incluye 1.609 entradas organizadas en siete categorías, índice CSV, muestra PDF, informe y los 1.612 originales DWG. Tres fuentes no pudieron incorporarse: B0795 Ómnibus, B0924 Tina 16Alzado y B1093 Det Est; se conservan en ORIGINALES.
+
+No se incluye un DWG maestro validado. Hay scripts AutoLISP opcionales de guardado y ensamblado para AutoCAD completo de Windows, no ejecutados en este entorno.
